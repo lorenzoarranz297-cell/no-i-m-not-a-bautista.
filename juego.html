@@ -2,242 +2,320 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>DEEP WEB - THE ROOM v5</title>
+    <title>Apartamento 404 - Gravedad Corregida</title>
     <style>
-        :root { --glow: #00ff41; --bg: #050505; }
-        body { margin: 0; background: #000; color: var(--glow); font-family: 'Courier New', monospace; overflow: hidden; }
-
-        #viewport {
-            width: 100vw; height: 100vh;
-            perspective: 1200px;
-            display: flex; align-items: center; justify-content: center;
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        #overlay-inicio {
+            position: absolute; width: 100%; height: 100%; background: #000;
+            display: flex; justify-content: center; align-items: center; z-index: 500;
         }
-
-        #room {
-            width: 1000px; height: 600px;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.2, 0, 0.2, 1);
-            transform: translateZ(-500px) rotateY(0deg);
+        #peephole-vignette {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 20%, black 80%);
+            display: none; pointer-events: none; z-index: 10;
         }
-
-        .wall {
-            position: absolute; width: 1000px; height: 600px;
-            background: #0a0a0a; border: 4px solid #111;
-            display: flex; align-items: center; justify-content: center;
-            backface-visibility: hidden;
+        #dialog-box {
+            position: absolute; bottom: 120px; width: 100%; text-align: center;
+            color: #00ff00; font-size: 22px; z-index: 35; display: none;
+            text-shadow: 2px 2px #000; font-weight: bold;
         }
-
-        .front { transform: rotateY(0deg) translateZ(500px); } 
-        .right { transform: rotateY(-90deg) translateZ(500px); } 
-        .left  { transform: rotateY(90deg) translateZ(500px); } 
-
-        /* INTERFAZ PC */
-        .pc-screen {
-            width: 850px; height: 500px;
-            background: #111; border: 15px solid #222;
-            display: flex; flex-direction: column; overflow: hidden; position: relative;
+        #knock-ui {
+            position: absolute; top: 15%; width: 100%; text-align: center;
+            color: #ff0000; font-size: 20px; z-index: 5; display: none;
+            text-shadow: 2px 2px #000;
         }
-        .tabs { display: flex; background: #222; padding: 5px; gap: 2px; }
-        .tab { background: #333; padding: 8px; cursor: pointer; font-size: 10px; border: none; color: #888; }
-        .tab.active { background: #444; color: var(--glow); }
-        .web-content { flex-grow: 1; background: #fff; color: #333; overflow-y: scroll; padding: 20px; font-family: sans-serif; }
-
-        /* OBJETOS */
-        .door { width: 220px; height: 420px; background: #000; border: 8px solid #1a1a1a; transition: 0.2s; position: relative; }
-        .window-frame { width: 320px; height: 320px; background: #000; border: 10px solid #222; position: relative; overflow: hidden; }
-        .curtain { 
-            position: absolute; width: 50%; height: 100%; background: #2b0b0b; 
-            transition: transform 0.5s ease; z-index: 2; border: 1px solid #1a0505;
+        #day-counter { position: absolute; top: 20px; left: 20px; color: #f1c40f; font-size: 24px; z-index: 20; }
+        #controls-ui {
+            position: absolute; bottom: 40px; width: 100%; display: none;
+            justify-content: center; gap: 30px; z-index: 25;
         }
-        .curtain.left-c { left: 0; }
-        .curtain.right-c { right: 0; }
-        .curtain.open { transform: translateX(-90%); }
-        .curtain.right-c.open { transform: translateX(90%); }
-
-        /* NOTAS */
-        #notepad-container {
-            position: absolute; right: 20px; bottom: 20px;
-            width: 160px; height: 160px; background: #feff9c; padding: 10px;
-            color: #000; box-shadow: 5px 5px 15px rgba(0,0,0,0.8);
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; border: 2px solid #fff; background: #000; color: #fff; }
+        #fade-sleep {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; display: none; z-index: 1000; justify-content: center;
+            align-items: center; color: white; font-size: 30px;
         }
-        #notepad { width: 100%; height: 90px; border: none; background: transparent; resize: none; font-size: 18px; outline: none; font-family: 'Comic Sans MS', cursive; }
-
-        #jumpscare {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: #000; color:white; display:none;
-            z-index: 9999; font-size: 40px; text-align: center; padding-top: 35vh;
-        }
-        
-        .hud { position: fixed; bottom: 20px; width: 100%; text-align: center; color: #444; font-size: 12px; }
     </style>
 </head>
 <body>
 
-<div id="viewport">
-    <div id="room">
-        <div class="wall front">
-            <div class="pc-screen">
-                <div class="tabs">
-                    <button class="tab active" onclick="showPage(0)">AMAZON_DARK</button>
-                    <button class="tab" onclick="showPage(1)">AUTO_EXOTIC</button>
-                    <button class="tab" onclick="showPage(2)">LAND_SALE</button>
-                </div>
-                <div class="web-content" id="browser-body"></div>
-                <div id="notepad-container">
-                    <strong>MEMO:</strong>
-                    <textarea id="notepad" placeholder="Escribe aquí..."></textarea>
-                    <button onclick="checkWin()" style="width:100%; cursor:pointer;">SUBIR</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="wall right">
-            <div style="text-align: center;">
-                <div class="door" id="main-door"></div>
-                <p id="door-label" style="margin-top:20px">PRESIONA [E] PARA ESCUCHAR</p>
-            </div>
-        </div>
-
-        <div class="wall left">
-            <div style="text-align: center;">
-                <div class="window-frame">
-                    <div class="curtain left-c" id="c1"></div>
-                    <div class="curtain right-c" id="c2"></div>
-                </div>
-                <p style="margin-top:20px">[E] CORTINAS</p>
-            </div>
-        </div>
+    <div id="overlay-inicio">
+        <button onclick="comenzarJuego()">INICIAR TURNO</button>
     </div>
-</div>
 
-<div id="jumpscare">TE HE VISTO</div>
-<div class="hud">A / D: Girar | W / S: Monitor | E: Interactuar</div>
+    <div id="knock-ui">¡DIN DON!</div>
+    <div id="fade-sleep">DURMIENDO...</div>
+    <div id="day-counter">DIA: 1</div>
+    <div id="dialog-box"></div>
+    <div id="peephole-vignette"></div>
 
-<script>
-    let currentRotation = 0;
-    let danger = 0;
-    let curtainsOpen = false;
-    const room = document.getElementById('room');
-    const note = document.getElementById('notepad');
+    <div id="controls-ui">
+        <button onclick="decidirInvitado(true)">DEJAR ENTRAR</button>
+        <button onclick="decidirInvitado(false)">RECHAZAR</button>
+    </div>
 
-    const codes = [
-        String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-        String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-        String.fromCharCode(65 + Math.floor(Math.random() * 26))
-    ];
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 
-    const pages = [
-        `<h3>Amazon Marketplace - Ofertas</h3>
-         <div style="height:400px; border:1px solid #eee; padding:10px">
-            <p><strong>Cámara Térmica PRO</strong></p>
-            <p>Detecta calor a través de paredes. Ideal para seguridad nocturna.</p>
-            <p>Precio: $299.00 - Código de envío: ${codes[0]} (Premium)</p>
-            <hr>
-            <p><strong>Linterna Táctica</strong></p>
-            <p>10000 lúmenes. No dejes que se acerquen en la oscuridad.</p>
-         </div>`,
-        `<h3>Luxury Auto Sales</h3>
-         <div style="height:400px; background:#f9f9f9; padding:10px">
-            <p>Ferrari Testarossa 1984 - Color Blanco</p>
-            <p>Un clásico de los 80. Solo para coleccionistas serios.</p>
-            <p>Referencia del motor: VIN-${codes[1]}X99</p>
-            <div style="width:100%; height:150px; background:#333; color:white; display:flex; align-items:center; justify-content:center">IMAGEN_DEL_VEHICULO</div>
-         </div>`,
-        `<h3>Bienes Raíces: Terrenos Aislados</h3>
-         <div style="height:400px; padding:10px">
-            <p>Se vende isla privada en el Pacífico.</p>
-            <p>Totalmente fuera de la red. Nadie te encontrará aquí.</p>
-            <p>Certificado de propiedad número: ${codes[2]}77-B</p>
-            <p>Scrollea para ver más...</p>
-            <div style="height:300px"></div>
-            <p>Fin del listado.</p>
-         </div>`
-    ];
+    <script>
+        let audioCtx, gameStarted = false;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-    function showPage(index) {
-        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
-        document.getElementById('browser-body').innerHTML = pages[index];
-    }
-    showPage(0);
+        let mirandoPorMirilla = false;
+        const keys = {};
+        let pitch = 0, yaw = 0, dia = 1;
 
-    // Sistema de Controles
-    window.addEventListener('keydown', (e) => {
-        const key = e.key.toUpperCase();
-        
-        // Si presionamos A o D, quitamos el foco del bloc de notas para poder rotar
-        if (key === 'A' || key === 'D' || key === 'W' || key === 'S') {
-            note.blur(); 
+        const frasesBase = ["Soy el vecino, ¿me dejas pasar?", "Revision de gas, abra por favor.", "Soy yo, olvide las llaves.", "Traigo un pedido.", "Hola, vengo a ver a un amigo."];
+
+        function comenzarJuego() {
+            document.getElementById('overlay-inicio').style.display = 'none';
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            gameStarted = true;
+            document.body.requestPointerLock();
+            spawnLoop();
         }
 
-        if (key === 'D') { currentRotation = -90; } 
-        else if (key === 'A') { currentRotation = 90; } 
-        else if (key === 'W' || key === 'S') { currentRotation = 0; }
+        function sonarTimbre() {
+            if(!audioCtx) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(660, t);
+            osc.frequency.exponentialRampToValueAtTime(440, t + 0.5);
+            gain.gain.setValueAtTime(0.05, t);
+            gain.gain.linearRampToValueAtTime(0, t + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(t + 0.5);
+        }
 
-        if (key === 'E') {
-            if (currentRotation === 90) { // En la ventana
-                curtainsOpen = !curtainsOpen;
-                document.getElementById('c1').classList.toggle('open', curtainsOpen);
-                document.getElementById('c2').classList.toggle('open', curtainsOpen);
+        // --- MATERIALES ---
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f });
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x666666 });
+
+        // --- ESTRUCTURA ---
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x221a14 }));
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -6; 
+        scene.add(floor);
+
+        const walls = new THREE.Group();
+        function crearPared(w, h, x, y, z, ry = 0) {
+            const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
+            p.position.set(x, y, z); p.rotation.y = ry;
+            walls.add(p);
+        }
+        crearPared(30, 12, 0, 0, 15, Math.PI); 
+        crearPared(30, 12, -15, 0, 0, Math.PI/2); 
+        crearPared(30, 12, 15, 0, 0, -Math.PI/2); 
+        crearPared(12.5, 12, -8.75, 0, -14.75); 
+        crearPared(12.5, 12, 8.75, 0, -14.75); 
+        crearPared(5, 3, 0, 4.5, -14.75); 
+
+        const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), wallMat);
+        ceil.position.y = 6; ceil.rotation.x = Math.PI/2;
+        walls.add(ceil);
+        scene.add(walls);
+
+        const door = new THREE.Mesh(new THREE.BoxGeometry(5, 9, 0.2), new THREE.MeshStandardMaterial({ color: 0x221100 }));
+        door.position.set(0, -1.5, -14.75);
+        scene.add(door);
+
+        const hWallMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        function crearParedH(w, h, x, y, z, ry = 0) {
+            const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), hWallMat);
+            p.position.set(x, y, z); p.rotation.y = ry;
+            scene.add(p);
+        }
+        crearParedH(30, 12, -7.5, 0, -30, Math.PI/2);
+        crearParedH(30, 12, 7.5, 0, -30, -Math.PI/2);
+
+        // --- MUEBLES ---
+        const bed = new THREE.Group();
+        const mattress = new THREE.Mesh(new THREE.BoxGeometry(7, 1.5, 10), new THREE.MeshStandardMaterial({color: 0x1a237e}));
+        const pillow = new THREE.Mesh(new THREE.BoxGeometry(5, 0.5, 2), new THREE.MeshStandardMaterial({color: 0xeeeeee}));
+        pillow.position.set(0, 0.8, -3.5);
+        bed.add(mattress, pillow);
+        bed.position.set(-10, -5.24, -8);
+        scene.add(bed);
+
+        const mesa = new THREE.Group();
+        const tab = new THREE.Mesh(new THREE.BoxGeometry(6, 0.4, 6), woodMat);
+        mesa.add(tab);
+        [[-2.5,-2.5],[2.5,-2.5],[-2.5,2.5],[2.5,2.5]].forEach(p => {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4, 0.3), woodMat);
+            leg.position.set(p[0], -2.2, p[1]); mesa.add(leg);
+        });
+        mesa.position.set(10, -3.79, -5);
+        scene.add(mesa);
+
+        function crearSilla(x, z, rotY) {
+            const silla = new THREE.Group();
+            const asiento = new THREE.Mesh(new THREE.BoxGeometry(2, 0.3, 2), woodMat);
+            asiento.position.y = 1.2; 
+            const resp = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 0.2), woodMat);
+            resp.position.set(0, 2.4, -0.9);
+            silla.add(asiento, resp);
+            [[-0.8,-0.8],[0.8,-0.8],[-0.8,0.8],[0.8,0.8]].forEach(p => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.2, 0.2), woodMat);
+                leg.position.set(p[0], 0.6, p[1]); silla.add(leg);
+            });
+            silla.position.set(x, -5.99, z);
+            silla.rotation.y = rotY;
+            scene.add(silla);
+        }
+        crearSilla(6.5, -5, Math.PI/2);
+        crearSilla(13.5, -5, -Math.PI/2);
+
+        const couch = new THREE.Group();
+        const cBase = new THREE.Mesh(new THREE.BoxGeometry(10, 2.2, 4.5), new THREE.MeshStandardMaterial({color: 0x222222}));
+        const cBack = new THREE.Mesh(new THREE.BoxGeometry(10, 4.5, 0.8), new THREE.MeshStandardMaterial({color: 0x111111}));
+        cBack.position.set(0, 1.5, 1.7);
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.8, 4.5), new THREE.MeshStandardMaterial({color: 0x111111}));
+        armL.position.set(-4.4, 0.3, 0);
+        const armR = armL.clone(); armR.position.x = 4.4;
+        couch.add(cBase, cBack, armL, armR);
+        couch.position.set(0, -4.89, 12);
+        scene.add(couch);
+
+        // --- LUZ ---
+        const hLight = new THREE.PointLight(0xffffff, 100, 30); hLight.position.set(0, 4, -22);
+        scene.add(hLight);
+        scene.add(new THREE.AmbientLight(0x404040));
+        const sun = new THREE.PointLight(0xffffff, 80, 50); sun.position.set(0, 5, 0); scene.add(sun);
+
+        // --- NPC ---
+        let actualGroup = [], puertaOcupada = false;
+        // Slots ajustados para sentar NPCs físicamente sobre los muebles
+        const slots = [
+            {p:[6.5, -4.8, -5], o:false, r:null, sit:true, rot: Math.PI/2},
+            {p:[13.5, -4.8, -5], o:false, r:null, sit:true, rot: -Math.PI/2},
+            {p:[0, -3.8, 10.5], o:false, r:null, sit:true, rot: Math.PI} 
+        ];
+
+        function crearNPC(malo) {
+            const g = new THREE.Group();
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.6), new THREE.MeshStandardMaterial({color: 0x333333}));
+            torso.position.y = 2.6; g.add(torso);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.55), new THREE.MeshStandardMaterial({color: 0xffdbac}));
+            head.position.y = 4.2; g.add(head);
+            const legL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 2.5, 0.45), new THREE.MeshStandardMaterial({color: 0x333333}));
+            legL.position.set(-0.35, 0.5, 0); g.add(legL);
+            const legR = legL.clone(); legR.position.x = 0.35; g.add(legR);
+            g.userData = { legL, legR };
+            if(malo) {
+                const ojo = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshBasicMaterial({color: 0xff0000}));
+                ojo.position.set(-0.2, 4.3, 0.5); g.add(ojo);
+                const ojo2 = ojo.clone(); ojo2.position.x = 0.2; g.add(ojo2);
+                g.scale.y = 1.35;
             }
-            if (currentRotation === -90) { // En la puerta
-                interactDoor();
+            return g;
+        }
+
+        function sentar(npc, rot, posY) {
+            npc.rotation.y = rot;
+            npc.userData.legL.rotation.x = -Math.PI/2;
+            npc.userData.legL.position.set(-0.35, 1.4, 1.2);
+            npc.userData.legR.rotation.x = -Math.PI/2;
+            npc.userData.legR.position.set(0.35, 1.4, 1.2);
+            npc.position.y = posY; // Forzamos la posición Y del slot
+        }
+
+        function spawnLoop() {
+            if(puertaOcupada) return;
+            setTimeout(() => {
+                puertaOcupada = true; actualGroup = [];
+                const n = Math.floor(Math.random()*2)+1;
+                for(let i=0; i<n; i++){
+                    const npc = crearNPC(Math.random() > 0.7);
+                    npc.position.set((i - (n-1)/2)*3, -5.9, -20);
+                    scene.add(npc); actualGroup.push({mesh:npc, malo:npc.scale.y > 1});
+                }
+                sonarTimbre();
+                document.getElementById('knock-ui').style.display = 'block';
+                setTimeout(() => document.getElementById('knock-ui').style.display = 'none', 1500);
+            }, 5000);
+        }
+
+        window.decidirInvitado = (acepta) => {
+            if(acepta && actualGroup.some(n => n.malo)) { alert("GAME OVER"); location.reload(); return; }
+            if(acepta) {
+                actualGroup.forEach(n => {
+                    const s = slots.find(s => !s.o);
+                    if(s) { 
+                        sentar(n.mesh, s.rot, s.p[1]); 
+                        n.mesh.position.set(s.p[0], s.p[1], s.p[2]); 
+                        s.o = true; s.r = n.mesh; 
+                    }
+                    else scene.remove(n.mesh);
+                });
+            } else actualGroup.forEach(n => scene.remove(n.mesh));
+            cerrarMirilla(); puertaOcupada = false; spawnLoop();
+        };
+
+        function cerrarMirilla() {
+            mirandoPorMirilla = false; camera.position.set(0, 0, -5);
+            document.getElementById('peephole-vignette').style.display = 'none';
+            document.getElementById('controls-ui').style.display = 'none';
+            document.getElementById('dialog-box').style.display = 'none';
+            document.body.requestPointerLock();
+            window.speechSynthesis.cancel();
+        }
+
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if(e.key.toLowerCase() === 'e' && camera.position.z < -10) {
+                if(!mirandoPorMirilla) {
+                    mirandoPorMirilla = true; document.exitPointerLock();
+                    // MIRILLA AJUSTADA (y = 0.3 para centrar a los vecinos comunes)
+                    camera.position.set(0, 0.3, -15.1); camera.rotation.set(0, 0, 0);
+                    document.getElementById('peephole-vignette').style.display = 'block';
+                    document.getElementById('controls-ui').style.display = 'flex';
+                    if(actualGroup.length) {
+                        const d = frasesBase[Math.floor(Math.random()*frasesBase.length)];
+                        document.getElementById('dialog-box').innerText = d;
+                        document.getElementById('dialog-box').style.display = 'block';
+                        const m = new SpeechSynthesisUtterance(d);
+                        m.lang = 'es-ES'; m.pitch = actualGroup[0].malo ? 0.3 : 1;
+                        window.speechSynthesis.speak(m);
+                    }
+                } else cerrarMirilla();
             }
+            if(e.key.toLowerCase() === 'f' && camera.position.distanceTo(bed.position) < 8) {
+                document.getElementById('fade-sleep').style.display = 'flex';
+                setTimeout(() => {
+                    dia++; document.getElementById('day-counter').innerText = "DIA: " + dia;
+                    slots.forEach(s => { if(s.r) scene.remove(s.r); s.o = false; s.r = null; });
+                    document.getElementById('fade-sleep').style.display = 'none';
+                }, 1500);
+            }
+        });
+
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        window.addEventListener('mousemove', e => {
+            if (document.pointerLockElement === document.body && !mirandoPorMirilla) {
+                yaw -= e.movementX * 0.002; pitch -= e.movementY * 0.002;
+                pitch = Math.max(-1.5, Math.min(1.5, pitch));
+            }
+        });
+
+        function update() {
+            requestAnimationFrame(update);
+            if(gameStarted && !mirandoPorMirilla) {
+                const move = new THREE.Vector3();
+                if(keys['w']) move.z -= 1; if(keys['s']) move.z += 1;
+                if(keys['a']) move.x -= 1; if(keys['d']) move.x += 1;
+                move.normalize().applyQuaternion(camera.quaternion);
+                camera.position.addScaledVector(move, 0.2);
+                camera.position.y = 0;
+                camera.position.clamp(new THREE.Vector3(-14,0,-14), new THREE.Vector3(14,0,14));
+                camera.rotation.set(pitch, yaw, 0, 'YXZ');
+            }
+            renderer.render(scene, camera);
         }
-        
-        updateCamera();
-    });
-
-    function updateCamera() {
-        room.style.transform = `translateZ(-500px) rotateY(${currentRotation}deg)`;
-    }
-
-    function interactDoor() {
-        const door = document.getElementById('main-door');
-        const label = document.getElementById('door-label');
-        
-        // Animación de "acercarse"
-        room.style.transform = `translateZ(-200px) rotateY(-90deg)`;
-        label.innerText = "ESCUCHANDO...";
-        
-        setTimeout(() => {
-            updateCamera();
-            label.innerText = "PRESIONA [E] PARA ESCUCHAR";
-            if(danger > 20) danger -= 15; // Bajar el miedo
-        }, 800);
-    }
-
-    // Gameloop
-    setInterval(() => {
-        if (curtainsOpen) danger += 1.2;
-        danger += 0.3;
-
-        // Visual de peligro
-        if (danger > 75) {
-            document.getElementById('main-door').style.boxShadow = "0 0 30px red";
-        } else {
-            document.getElementById('main-door').style.boxShadow = "none";
-        }
-
-        if (danger > 100) triggerScare();
-    }, 100);
-
-    function checkWin() {
-        const input = note.value.trim().toUpperCase();
-        if (input === codes.join("")) {
-            alert("CONEXIÓN CERRADA CON ÉXITO. ESTÁS A SALVO.");
-            location.reload();
-        } else {
-            danger += 30;
-            alert("CÓDIGO ERRÓNEO. ALGO SE ACERCA.");
-        }
-    }
-
-    function triggerScare() {
-        document.getElementById('jumpscare').style.display = 'block';
-        setTimeout(() => location.reload(), 3000);
-    }
-</script>
-
+        update();
+    </script>
 </body>
 </html>
